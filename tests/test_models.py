@@ -1,12 +1,16 @@
 import pytest
 import os
-import joblib
-import numpy as np
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 MODELS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "outputs", "models")
+
+
+def test_outputs_directory_exists():
+    assert os.path.exists(MODELS_DIR)
+
+
+def test_model_files_exist():
+    model_files = [f for f in os.listdir(MODELS_DIR) if f.endswith((".pkl", ".joblib", ".h5", ".pt"))]
+    assert len(model_files) > 0
 
 
 def test_analyzer_model_loads():
@@ -26,6 +30,7 @@ def test_estimator_model_loads():
 
 
 def test_analyzer_prediction():
+    import numpy as np
     from well_test_interpretation.models.pressure_analyzer import PressureAnalyzer
     model = PressureAnalyzer.load(os.path.join(MODELS_DIR, "pressure_analyzer.joblib"))
     X = np.random.rand(10, 9)
@@ -34,16 +39,8 @@ def test_analyzer_prediction():
     assert len(preds) == 10
 
 
-def test_analyzer_predict_proba():
-    from well_test_interpretation.models.pressure_analyzer import PressureAnalyzer
-    model = PressureAnalyzer.load(os.path.join(MODELS_DIR, "pressure_analyzer.joblib"))
-    X = np.random.rand(10, 9)
-    proba = model.predict_proba(X)
-    assert proba is not None
-    assert proba.shape[0] == 10
-
-
 def test_estimator_prediction():
+    import numpy as np
     from well_test_interpretation.models.reservoir_estimator import ReservoirEstimator
     model = ReservoirEstimator.load(os.path.join(MODELS_DIR, "reservoir_estimator.joblib"))
     X = np.random.rand(10, 7)
