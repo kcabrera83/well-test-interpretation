@@ -6,6 +6,7 @@ import numpy as np
 from typing import List, Dict
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -28,6 +29,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+Instrumentator().instrument(app).expose(app)
 
 MODELS_DIR = os.path.join(os.path.dirname(__file__), "outputs", "models")
 analyzer = None
@@ -160,3 +163,4 @@ async def estimate(request: EstimateRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
