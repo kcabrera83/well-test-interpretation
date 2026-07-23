@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Well Test Interpretation</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 2px solid #a855f7;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            color: #a855f7;
+        }
+        .header .status {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .status-ok { background: #065f46; color: #6ee7b7; }
+        .status-err { background: #7f1d1d; color: #fca5a5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .card h2 {
+            font-size: 1.1rem;
+            color: #a855f7;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #334155;
+        }
+        .card.full { grid-column: 1 / -1; }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+        }
+        textarea { min-height: 100px; resize: vertical; }
+        button {
+            padding: 10px 24px;
+            background: #a855f7;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #9333ea; }
+        button:disabled { background: #475569; cursor: not-allowed; }
+        .result-box {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            min-height: 60px;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .chart-container { position: relative; height: 300px; margin-top: 12px; }
+        .metric { display: inline-block; margin-right: 24px; margin-bottom: 8px; }
+        .metric .val { font-size: 1.6rem; font-weight: 700; color: #a855f7; }
+        .metric .lbl { font-size: 0.8rem; color: #94a3b8; display: block; }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 0.8rem;
+            border-top: 1px solid #1e293b;
+            margin-top: 40px;
+        }
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Well Test Interpretation</h1>
+        <span id="status-badge" class="status status-err">Checking...</span>
+    </div>
+
+    <div class="container">
+        <div class="grid">
+            <div class="card">
+                <h2>Pressure Analysis</h2>
+                <label>Time (hours) - comma separated</label>
+                <input id="time-input" type="text" placeholder="0.01, 0.1, 1, 10, 100">
+                <label>Pressure (psi) - comma separated</label>
+                <input id="pressure-input" type="text" placeholder="5000, 4900, 4700, 4500, 4300">
+                <label>Flow Rate (bbl/d) - comma separated</label>
+                <input id="flowrate-input" type="text" placeholder="500, 500, 500, 500, 500">
+                <button id="btn-analyze" onclick="analyzePressure()">Analyze Flow Regimes</button>
+                <div id="analyze-result" class="result-box"></div>
+            </div>
+
+            <div class="card">
+                <h2>Reservoir Estimation</h2>
+                <label>Wellbore Radius (ft)</label>
+                <input id="radius-input" type="text" value="0.328">
+                <label>Reservoir Pressure (psi)</label>
+                <input id="respress-input" type="text" value="5500">
+                <label>Drainage Radius (ft)</label>
+                <input id="drainrad-input" type="text" value="1500">
+                <label>Formation Thickness (ft)</label>
+                <input id="thickness-input" type="text" value="50">
+                <button id="btn-estimate" onclick="estimateReservoir()">Estimate Parameters</button>
+                <div id="estimate-result" class="result-box"></div>
+            </div>
+
+            <div class="card">
+                <h2>Pressure vs Time</h2>
+                <div class="chart-container">
+                    <canvas id="pressure-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Flow Regime Distribution</h2>
+                <div class="chart-container">
+                    <canvas id="regime-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="card full">
+                <h2>Model Information</h2>
+                <div id="models-info" class="result-box">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Elaborado por Ing. Kelvin Cabrera
+    </div>
+
+    <script>
+        let pressureChart, regimeChart;
+
+        function initCharts() {
+            const pCtx = document.getElementById('pressure-chart').getContext('2d');
+            pressureChart = new Chart(pCtx, {
+                type: 'scatter',
+                data: { datasets: [{ label: 'Pressure (psi)', data: [], borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.3)', pointRadius: 3 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { title: { display: true, text: 'Time (hours)', color: '#94a3b8' }, ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                        y: { title: { display: true, text: 'Pressure (psi)', color: '#94a3b8' }, ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                    },
+                    plugins: { legend: { labels: { color: '#e2e8f0' } } }
+                }
+            });
+
+            const rCtx = document.getElementById('regime-chart').getContext('2d');
+            regimeChart = new Chart(rCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Wellbore Storage', 'Radial Flow', 'Boundary Dominated'],
+                    datasets: [{ data: [1, 1, 1], backgroundColor: ['#f97316', '#a855f7', '#06b6d4'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#e2e8f0' } } } }
+            });
+        }
+
+        async function checkHealth() {
+            try {
+                const r = await fetch('/api/health');
+                const d = await r.json();
+                const badge = document.getElementById('status-badge');
+                if (d.status === 'healthy') {
+                    badge.textContent = 'Healthy';
+                    badge.className = 'status status-ok';
+                } else {
+                    badge.textContent = 'Degraded';
+                    badge.className = 'status status-err';
+                }
+            } catch {
+                document.getElementById('status-badge').textContent = 'Offline';
+            }
+        }
+
+        async function loadModels() {
+            try {
+                const r = await fetch('/api/models');
+                const d = await r.json();
+                document.getElementById('models-info').textContent = JSON.stringify(d, null, 2);
+            } catch { document.getElementById('models-info').textContent = 'Failed to load'; }
+        }
+
+        function parseInput(id) {
+            return document.getElementById(id).value.split(',').map(v => parseFloat(v.trim())).filter(v => !isNaN(v));
+        }
+
+        async function analyzePressure() {
+            const btn = document.getElementById('btn-analyze');
+            btn.disabled = true;
+            const resDiv = document.getElementById('analyze-result');
+            resDiv.textContent = 'Analyzing...';
+            try {
+                const payload = {
+                    time_hours: parseInput('time-input'),
+                    pressure_psi: parseInput('pressure-input'),
+                    flow_rate_bbl_d: parseInput('flowrate-input')
+                };
+                if (!payload.time_hours.length) { resDiv.textContent = 'Error: enter data'; btn.disabled = false; return; }
+                const r = await fetch('/api/analyze', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                const d = await r.json();
+                if (d.error) { resDiv.textContent = 'Error: ' + d.error; return; }
+                let txt = 'Flow Regime Predictions:\n';
+                d.predictions.forEach((p, i) => { txt += `  Sample ${i+1}: ${p}\n`; });
+                resDiv.textContent = txt;
+
+                const counts = [0, 0, 0];
+                d.predictions.forEach(p => { if (p.includes('Wellbore')) counts[0]++; else if (p.includes('Radial')) counts[1]++; else counts[2]++; });
+                regimeChart.data.datasets[0].data = counts;
+                regimeChart.update();
+
+                pressureChart.data.datasets[0].data = payload.time_hours.map((t, i) => ({ x: t, y: payload.pressure_psi[i] }));
+                pressureChart.update();
+            } catch(e) { resDiv.textContent = 'Request failed: ' + e.message; }
+            btn.disabled = false;
+        }
+
+        async function estimateReservoir() {
+            const btn = document.getElementById('btn-estimate');
+            btn.disabled = true;
+            const resDiv = document.getElementById('estimate-result');
+            resDiv.textContent = 'Estimating...';
+            try {
+                const payload = {
+                    time_hours: parseInput('time-input'),
+                    pressure_psi: parseInput('pressure-input'),
+                    flow_rate_bbl_d: parseInput('flowrate-input'),
+                    wellbore_radius_ft: parseInput('radius-input'),
+                    reservoir_pressure_psi: parseInput('respress-input'),
+                    drainage_radius_ft: parseInput('drainrad-input'),
+                    formation_thickness_ft: parseInput('thickness-input')
+                };
+                if (!payload.time_hours.length) { resDiv.textContent = 'Error: enter pressure data first'; btn.disabled = false; return; }
+                while (payload.wellbore_radius_ft.length < payload.time_hours.length) payload.wellbore_radius_ft.push(payload.wellbore_radius_ft[0]);
+                while (payload.reservoir_pressure_psi.length < payload.time_hours.length) payload.reservoir_pressure_psi.push(payload.reservoir_pressure_psi[0]);
+                while (payload.drainage_radius_ft.length < payload.time_hours.length) payload.drainage_radius_ft.push(payload.drainage_radius_ft[0]);
+                while (payload.formation_thickness_ft.length < payload.time_hours.length) payload.formation_thickness_ft.push(payload.formation_thickness_ft[0]);
+
+                const r = await fetch('/api/estimate', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                const d = await r.json();
+                if (d.error) { resDiv.textContent = 'Error: ' + d.error; return; }
+                const avgP = d.permeability_md.reduce((a,b)=>a+b,0)/d.permeability_md.length;
+                const avgS = d.skin_factor.reduce((a,b)=>a+b,0)/d.skin_factor.length;
+                resDiv.textContent = `Estimated Parameters:\n  Permeability: ${avgP.toFixed(2)} md\n  Skin Factor:  ${avgS.toFixed(4)}`;
+            } catch(e) { resDiv.textContent = 'Request failed: ' + e.message; }
+            btn.disabled = false;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            checkHealth();
+            loadModels();
+        });
+    </script>
+</body>
+</html>
