@@ -169,6 +169,20 @@ def health():
     })
 
 
+@app.route("/api/docs", methods=["GET"])
+def api_docs():
+    return jsonify({
+        "openapi": "3.0.0",
+        "info": {"title": "Well Test Interpretation", "version": "1.0.0"},
+        "paths": {
+            "/api/health": {"get": {"summary": "Health check"}},
+            "/api/models": {"get": {"summary": "Model info"}},
+            "/api/analyze": {"post": {"summary": "Analyze pressure data for flow regimes"}},
+            "/api/estimate": {"post": {"summary": "Estimate permeability and skin factor"}},
+        }
+    })
+
+
 if __name__ == "__main__":
     load_models()
     app.run(host="0.0.0.0", port=5012, debug=False)
