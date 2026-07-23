@@ -1,19 +1,38 @@
 # Well Test Interpretation
 
-ML-based well test interpretation and pressure transient analysis system.
+ML-based well test interpretation and pressure transient analysis system using advanced curve fitting and uncertainty quantification.
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| Curve Fitting | **scipy.optimize** - non-linear least squares |
+| Curve Fitting | **lmfit** - parameter estimation and modeling |
+| Uncertainty | **uncertainties** - error propagation |
+| Data Processing | pandas, numpy, joblib |
+| Web Server | **FastAPI** + uvicorn |
+| Monitoring | prometheus-fastapi-instrumentator |
+| Validation | pydantic v2 |
+| Visualization | matplotlib, seaborn |
+
+### Key Libraries
+- scipy.optimize - Non-linear curve fitting for pressure transient analysis
+- lmfit - Advanced parameter estimation with constraints
+- uncertainties - Error propagation and uncertainty quantification
+- FastAPI - Modern async web framework
 
 ## Overview
 
-This project uses machine learning models to analyze well test pressure data,
+This project uses machine learning models and curve fitting to analyze well test pressure data,
 identify flow regimes, and estimate reservoir parameters such as permeability
 and skin factor.
 
 ### Models
 
-- **Pressure Analyzer** (GradientBoosting) - Identifies flow regimes from
+- **Pressure Analyzer** (scipy.optimize + lmfit) - Identifies flow regimes from
   pressure derivative data: wellbore storage, radial flow, boundary dominated.
-- **Reservoir Estimator** (RandomForest) - Estimates permeability (md) and
-  skin factor from pressure transient data.
+- **Reservoir Estimator** (lmfit + uncertainties) - Estimates permeability (md) and
+  skin factor from pressure transient data with uncertainty bounds.
 
 ## Setup
 
@@ -69,10 +88,6 @@ well-test-interpretation/
   requirements.txt
   setup.py
 ```
-
-## License
-
-MIT
 
 ---
 
