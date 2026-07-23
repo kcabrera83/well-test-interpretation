@@ -55,6 +55,9 @@ class AnalyzeRequest(BaseModel):
     time_hours: List[float]
     pressure_psi: List[float]
     flow_rate_bbl_d: List[float]
+    wellbore_radius_ft: float = 0.328
+    reservoir_pressure_psi: float = 3000.0
+    formation_thickness_ft: float = 50.0
 
 
 class AnalyzeResponse(BaseModel):
@@ -67,10 +70,10 @@ class EstimateRequest(BaseModel):
     time_hours: List[float]
     pressure_psi: List[float]
     flow_rate_bbl_d: List[float]
-    wellbore_radius_ft: List[float]
-    reservoir_pressure_psi: List[float]
-    drainage_radius_ft: List[float]
-    formation_thickness_ft: List[float]
+    wellbore_radius_ft: float
+    reservoir_pressure_psi: float
+    drainage_radius_ft: float
+    formation_thickness_ft: float
 
 
 class EstimateResponse(BaseModel):
@@ -113,10 +116,18 @@ async def analyze(request: AnalyzeRequest):
     if n == 0:
         raise HTTPException(status_code=400, detail="Empty data arrays")
     try:
-        df = generate_pressure_transient_data(n_samples=n, seed=0)
-        df["time_hours"] = np.array(request.time_hours)
-        df["pressure_psi"] = np.array(request.pressure_psi)
-        df["flow_rate_bbl_d"] = np.array(request.flow_rate_bbl_d)
+        import pandas as pd
+        df = pd.DataFrame({
+            "time_hours": np.array(request.time_hours),
+            "pressure_psi": np.array(request.pressure_psi),
+            "flow_rate_bbl_d": np.array(request.flow_rate_bbl_d),
+            "wellbore_radius_ft": request.wellbore_radius_ft,
+            "reservoir_pressure_psi": request.reservoir_pressure_psi,
+            "formation_thickness_ft": request.formation_thickness_ft,
+            "permeability_md": np.ones(n),
+            "skin_factor": np.zeros(n),
+            "drainage_radius_ft": np.ones(n) * 1000.0,
+        })
         df = extract_features(df)
         feature_cols = [
             "log_time", "pressure_psi", "dp_dlogt", "flow_rate_bbl_d",
@@ -144,14 +155,19 @@ async def estimate(request: EstimateRequest):
     if n == 0:
         raise HTTPException(status_code=400, detail="Empty data arrays")
     try:
-        df = generate_pressure_transient_data(n_samples=n, seed=0)
-        df["time_hours"] = np.array(request.time_hours)
-        df["pressure_psi"] = np.array(request.pressure_psi)
-        df["flow_rate_bbl_d"] = np.array(request.flow_rate_bbl_d)
-        df["wellbore_radius_ft"] = np.array(request.wellbore_radius_ft)
-        df["reservoir_pressure_psi"] = np.array(request.reservoir_pressure_psi)
-        df["drainage_radius_ft"] = np.array(request.drainage_radius_ft)
-        df["formation_thickness_ft"] = np.array(request.formation_thickness_ft)
+        import pandas as pd
+        df = pd.DataFrame({
+            "time_hours": np.array(request.time_hours),
+            "pressure_psi": np.array(request.pressure_psi),
+            "flow_rate_bbl_d": np.array(request.flow_rate_bbl_d),
+            "wellbore_radius_ft": request.wellbore_radius_ft,
+            "reservoir_pressure_psi": request.reservoir_pressure_psi,
+            "drainage_radius_ft": request.drainage_radius_ft,
+            "formation_thickness_ft": request.formation_thickness_ft,
+            "permeability_md": np.ones(n),
+            "skin_factor": np.zeros(n),
+        })
+        df = extract_features(df)
         feature_cols = [
             "time_hours", "pressure_psi", "flow_rate_bbl_d",
             "wellbore_radius_ft", "reservoir_pressure_psi",

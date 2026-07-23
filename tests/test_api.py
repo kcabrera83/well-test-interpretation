@@ -50,10 +50,10 @@ def test_analyze_empty_data(client):
 
 def test_estimate_valid(client):
     payload = _make_time_series(50)
-    payload["wellbore_radius_ft"] = [0.328] * 50
-    payload["reservoir_pressure_psi"] = [3500.0] * 50
-    payload["drainage_radius_ft"] = [1500.0] * 50
-    payload["formation_thickness_ft"] = [50.0] * 50
+    payload["wellbore_radius_ft"] = 0.328
+    payload["reservoir_pressure_psi"] = 3500.0
+    payload["drainage_radius_ft"] = 1500.0
+    payload["formation_thickness_ft"] = 50.0
     response = client.post("/api/estimate", json=payload)
     assert response.status_code in (200, 500, 503)
     if response.status_code == 200:
