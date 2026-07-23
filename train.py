@@ -1,4 +1,4 @@
-"""Training script for well test interpretation models."""
+"""Training script for well test interpretation models using scipy + lmfit + uncertainties."""
 
 import os
 import sys
@@ -17,33 +17,30 @@ from well_test_interpretation.models.reservoir_estimator import ReservoirEstimat
 
 
 def main():
-    """Train and evaluate both ML models."""
+    """Train and evaluate both models."""
     print("=" * 60)
-    print("  WELL TEST INTERPRETATION - MODEL TRAINING")
+    print("  WELL TEST INTERPRETATION - MODEL TRAINING (scipy + lmfit)")
     print("=" * 60)
 
     output_dir = os.path.join(os.path.dirname(__file__), "outputs", "models")
     os.makedirs(output_dir, exist_ok=True)
 
-    # Generate synthetic data
     print("\n[1/6] Generating synthetic pressure transient data...")
     df = generate_pressure_transient_data(n_samples=5000, seed=42)
     print(f"  Generated {len(df)} samples")
     print(f"  Columns: {list(df.columns)}")
 
-    # Extract features
     print("\n[2/6] Extracting features and computing pressure derivatives...")
     df = extract_features(df)
     print(f"  Feature columns: {[c for c in df.columns if c not in ['flow_regime', 'well_id']]}")
 
-    # --- Flow Regime Classifier ---
-    print("\n[3/6] Training Flow Regime Classifier (GradientBoosting)...")
+    print("\n[3/6] Training Flow Regime Analyzer (lmfit curve fitting)...")
     X_train_f, X_test_f, y_train_f, y_test_f, feat_names_f, scaler_f = (
         prepare_flow_regime_data(df)
     )
     print(f"  Train: {len(y_train_f)} | Test: {len(y_test_f)}")
 
-    analyzer = PressureAnalyzer(n_estimators=200, max_depth=5, learning_rate=0.1)
+    analyzer = PressureAnalyzer()
     train_metrics = analyzer.train(X_train_f, y_train_f, feature_names=feat_names_f)
     print(f"  Train accuracy: {train_metrics['train_accuracy']:.4f}")
 
@@ -58,8 +55,7 @@ def main():
     analyzer.save(os.path.join(output_dir, "pressure_analyzer.joblib"))
     print("  Model saved to outputs/models/pressure_analyzer.joblib")
 
-    # --- Reservoir Parameter Estimator ---
-    print("\n[4/6] Training Reservoir Estimator (RandomForest)...")
+    print("\n[4/6] Training Reservoir Estimator (lmfit curve fitting)...")
     X_train_r, X_test_r, y_perm_train, y_perm_test, feat_names_r, scaler_r = (
         prepare_reservoir_data(df, target_col="permeability_md")
     )
@@ -67,7 +63,7 @@ def main():
 
     print(f"  Train: {len(y_perm_train)} | Test: {len(y_perm_test)}")
 
-    estimator = ReservoirEstimator(n_estimators=200, max_depth=15)
+    estimator = ReservoirEstimator()
     train_metrics_r = estimator.train(
         X_train_r, y_perm_train, y_skin_train, feature_names=feat_names_r
     )
@@ -86,10 +82,9 @@ def main():
     estimator.save(os.path.join(output_dir, "reservoir_estimator.joblib"))
     print("  Model saved to outputs/models/reservoir_estimator.joblib")
 
-    # Summary
     print("\n[5/6] Training Summary")
     print("-" * 40)
-    print(f"  Flow Regime Classifier: {eval_metrics['test_accuracy']:.2%} accuracy")
+    print(f"  Flow Regime Analyzer: {eval_metrics['test_accuracy']:.2%} accuracy")
     print(f"  Permeability Estimator: {eval_metrics_r['permeability']['r2']:.4f} R2")
     print(f"  Skin Factor Estimator:  {eval_metrics_r['skin_factor']['r2']:.4f} R2")
 

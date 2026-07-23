@@ -2,23 +2,10 @@
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 
 
 def compute_pressure_derivative(df):
-    """Compute Bourdet pressure derivative.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Must contain 'time_hours' and 'pressure_psi' columns.
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with added 'dp_dlogt' column.
-    """
+    """Compute Bourdet pressure derivative."""
     df = df.sort_values("time_hours").copy()
     log_t = np.log10(df["time_hours"].values)
     dp = np.gradient(df["pressure_psi"].values, log_t)
@@ -27,21 +14,7 @@ def compute_pressure_derivative(df):
 
 
 def extract_features(df):
-    """Extract features for flow regime identification.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Must contain 'time_hours', 'pressure_psi', 'flow_rate_bbl_d',
-        'permeability_md', 'skin_factor', 'wellbore_radius_ft',
-        'reservoir_pressure_psi', 'drainage_radius_ft',
-        'formation_thickness_ft'.
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with engineered features.
-    """
+    """Extract features for flow regime identification."""
     df = compute_pressure_derivative(df)
 
     df["log_time"] = np.log10(df["time_hours"].values + 1e-6)
@@ -63,19 +36,18 @@ def extract_features(df):
     return df
 
 
+def _standardize(X_train, X_test=None):
+    mean = X_train.mean(axis=0)
+    std = X_train.std(axis=0) + 1e-10
+    X_train_s = (X_train - mean) / std
+    if X_test is not None:
+        X_test_s = (X_test - mean) / std
+        return X_train_s, X_test_s, mean, std
+    return X_train_s, mean, std
+
+
 def prepare_flow_regime_data(df, target_col="flow_regime"):
-    """Prepare features and target for flow regime classification.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame with features and flow_regime target.
-
-    Returns
-    -------
-    tuple
-        X_train, X_test, y_train, y_test, feature_names, scaler.
-    """
+    """Prepare features and target for flow regime classification."""
     feature_cols = [
         "log_time", "pressure_psi", "dp_dlogt", "flow_rate_bbl_d",
         "normalized_pressure", "flow_normalized_dp", "pressure_squared",
@@ -85,30 +57,23 @@ def prepare_flow_regime_data(df, target_col="flow_regime"):
     X = df[available].values
     y = df[target_col].values
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
+    n = len(X)
+    indices = np.arange(n)
+    np.random.seed(42)
+    np.random.shuffle(indices)
+    split = int(n * 0.8)
+    train_idx, test_idx = indices[:split], indices[split:]
 
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
+    X_train, X_test = X[train_idx], X[test_idx]
+    y_train, y_test = y[train_idx], y[test_idx]
 
-    return X_train, X_test, y_train, y_test, available, scaler
+    X_train, X_test, mean, std = _standardize(X_train, X_test)
+
+    return X_train, X_test, y_train, y_test, available, {"mean": mean, "std": std}
 
 
 def prepare_reservoir_data(df, target_col="permeability_md"):
-    """Prepare features and target for reservoir parameter estimation.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame with features.
-
-    Returns
-    -------
-    tuple
-        X_train, X_test, y_train, y_test, feature_names, scaler.
-    """
+    """Prepare features and target for reservoir parameter estimation."""
     feature_cols = [
         "time_hours", "pressure_psi", "flow_rate_bbl_d",
         "wellbore_radius_ft", "reservoir_pressure_psi",
@@ -118,12 +83,16 @@ def prepare_reservoir_data(df, target_col="permeability_md"):
     X = df[available].values
     y = df[target_col].values
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    n = len(X)
+    indices = np.arange(n)
+    np.random.seed(42)
+    np.random.shuffle(indices)
+    split = int(n * 0.8)
+    train_idx, test_idx = indices[:split], indices[split:]
 
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
+    X_train, X_test = X[train_idx], X[test_idx]
+    y_train, y_test = y[train_idx], y[test_idx]
 
-    return X_train, X_test, y_train, y_test, available, scaler
+    X_train, X_test, mean, std = _standardize(X_train, X_test)
+
+    return X_train, X_test, y_train, y_test, available, {"mean": mean, "std": std}

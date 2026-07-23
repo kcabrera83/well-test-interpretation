@@ -19,7 +19,7 @@ from well_test_interpretation.models.reservoir_estimator import ReservoirEstimat
 app = FastAPI(
     title="Well Test Interpretation",
     description="Pressure transient analysis, flow regime classification, and reservoir estimation",
-    version="1.0.0",
+    version="2.0.0",
 )
 
 app.add_middleware(
@@ -40,12 +40,15 @@ estimator = None
 @app.on_event("startup")
 async def load_models():
     global analyzer, estimator
-    analyzer_path = os.path.join(MODELS_DIR, "pressure_analyzer.joblib")
-    estimator_path = os.path.join(MODELS_DIR, "reservoir_estimator.joblib")
-    if os.path.exists(analyzer_path):
-        analyzer = PressureAnalyzer.load(analyzer_path)
-    if os.path.exists(estimator_path):
-        estimator = ReservoirEstimator.load(estimator_path)
+    try:
+        analyzer_path = os.path.join(MODELS_DIR, "pressure_analyzer.joblib")
+        estimator_path = os.path.join(MODELS_DIR, "reservoir_estimator.joblib")
+        if os.path.exists(analyzer_path):
+            analyzer = PressureAnalyzer.load(analyzer_path)
+        if os.path.exists(estimator_path):
+            estimator = ReservoirEstimator.load(estimator_path)
+    except Exception as e:
+        print(f"[WARN] Error loading models: {e}")
 
 
 class AnalyzeRequest(BaseModel):
@@ -90,13 +93,13 @@ async def health():
 @app.get("/api/models")
 async def models_info():
     return {
-        "flow_regime_classifier": {
-            "type": "GradientBoostingClassifier",
+        "flow_regime_analyzer": {
+            "type": "lmfit curve fitting + Bayesian classification",
             "loaded": analyzer is not None and analyzer.trained,
             "flow_regimes": PressureAnalyzer.FLOW_REGIMES if analyzer else {},
         },
         "reservoir_estimator": {
-            "type": "RandomForestRegressor (permeability + skin)",
+            "type": "lmfit parametric curve fitting (permeability + skin)",
             "loaded": estimator is not None and estimator.trained,
         },
     }
@@ -163,4 +166,3 @@ async def estimate(request: EstimateRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
