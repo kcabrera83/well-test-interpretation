@@ -1,5 +1,3 @@
-"""lmfit-based model for estimating permeability and skin factor from pressure data."""
-
 import numpy as np
 import joblib
 from lmfit import Model

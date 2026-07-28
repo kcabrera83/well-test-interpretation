@@ -1,5 +1,3 @@
-"""API integration tests for Well Test Interpretation FastAPI app."""
-
 import sys
 from fastapi.testclient import TestClient
 
@@ -14,7 +12,7 @@ def test_health():
     assert r.status_code == 200
     data = r.json()
     assert data["status"] == "healthy"
-    print("  [PASS] /api/health")
+    pass
     return data
 
 
@@ -26,7 +24,7 @@ def test_models():
     assert "reservoir_estimator" in data
     assert data["flow_regime_classifier"]["loaded"] is True
     assert data["reservoir_estimator"]["loaded"] is True
-    print("  [PASS] /api/models")
+    pass
     return data
 
 
@@ -69,9 +67,7 @@ def test_estimate():
 
 
 def main():
-    print("=" * 50)
-    print("  WELL TEST INTERPRETATION - API TESTS")
-    print("=" * 50)
+    pass
 
     tests = [
         ("Health Check", test_health),
@@ -92,7 +88,6 @@ def main():
 
     print("\n" + "=" * 50)
     print(f"  RESULTS: {passed} passed, {failed} failed, {passed + failed} total")
-    print("=" * 50)
     sys.exit(0 if failed == 0 else 1)
 
 

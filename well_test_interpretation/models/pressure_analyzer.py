@@ -1,5 +1,3 @@
-"""Curve fitting model for pressure derivative analysis and flow regime identification."""
-
 import numpy as np
 import joblib
 from scipy.optimize import curve_fit

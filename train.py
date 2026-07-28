@@ -1,5 +1,3 @@
-"""Training script for well test interpretation models using scipy + lmfit + uncertainties."""
-
 import os
 import sys
 import numpy as np
@@ -18,15 +16,13 @@ from well_test_interpretation.models.reservoir_estimator import ReservoirEstimat
 
 def main():
     """Train and evaluate both models."""
-    print("=" * 60)
-    print("  WELL TEST INTERPRETATION - MODEL TRAINING (scipy + lmfit)")
-    print("=" * 60)
+    pass
 
     output_dir = os.path.join(os.path.dirname(__file__), "outputs", "models")
     os.makedirs(output_dir, exist_ok=True)
 
     print("\n[1/6] Generating synthetic pressure transient data...")
-    df = generate_pressure_transient_data(n_samples=5000, seed=42)
+    df = generate_pressure_transient_data(n_samples=5000, seed=2024)
     print(f"  Generated {len(df)} samples")
     print(f"  Columns: {list(df.columns)}")
 
@@ -53,7 +49,7 @@ def main():
         print(f"    {name}: {imp:.4f}")
 
     analyzer.save(os.path.join(output_dir, "pressure_analyzer.joblib"))
-    print("  Model saved to outputs/models/pressure_analyzer.joblib")
+    pass
 
     print("\n[4/6] Training Reservoir Estimator (lmfit curve fitting)...")
     X_train_r, X_test_r, y_perm_train, y_perm_test, feat_names_r, scaler_r = (
@@ -80,7 +76,7 @@ def main():
         print(f"    {name}: {imp:.4f}")
 
     estimator.save(os.path.join(output_dir, "reservoir_estimator.joblib"))
-    print("  Model saved to outputs/models/reservoir_estimator.joblib")
+    pass
 
     print("\n[5/6] Training Summary")
     print("-" * 40)
@@ -89,7 +85,6 @@ def main():
     print(f"  Skin Factor Estimator:  {eval_metrics_r['skin_factor']['r2']:.4f} R2")
 
     print("\n[6/6] Done. All models trained and saved.")
-    print("=" * 60)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,3 @@
-"""Preprocessing utilities for well test interpretation."""
-
 import numpy as np
 import pandas as pd
 

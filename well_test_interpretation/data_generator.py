@@ -1,10 +1,8 @@
-"""Generate synthetic pressure transient test data for well testing analysis."""
-
 import numpy as np
 import pandas as pd
 
 
-def generate_pressure_transient_data(n_samples=5000, seed=42):
+def generate_pressure_transient_data(n_samples=5000, seed=2024):
     """Generate synthetic well test data with realistic physics-based relationships.
 
     Parameters
@@ -84,7 +82,7 @@ def generate_pressure_transient_data(n_samples=5000, seed=42):
     return df
 
 
-def generate_batch_data(n_sets=10, samples_per_set=500, seed=42):
+def generate_batch_data(n_sets=10, samples_per_set=500, seed=2024):
     """Generate multiple well test datasets.
 
     Parameters

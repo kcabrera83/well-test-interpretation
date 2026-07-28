@@ -1,5 +1,3 @@
-"""FastAPI for well test interpretation."""
-
 import os
 import sys
 import numpy as np
@@ -19,7 +17,7 @@ from well_test_interpretation.models.reservoir_estimator import ReservoirEstimat
 app = FastAPI(
     title="Well Test Interpretation",
     description="Pressure transient analysis, flow regime classification, and reservoir estimation",
-    version="2.0.0",
+    version="0.1",
 )
 
 app.add_middleware(

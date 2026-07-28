@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="well-test-interpretation",
-    version="1.0.0",
+    version="0.1",
     description="ML-based well test interpretation and pressure transient analysis",
     author="Ing. Kelvin Cabrera",
     packages=find_packages(),
