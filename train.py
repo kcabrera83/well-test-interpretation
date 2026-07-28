@@ -87,5 +87,5 @@ def main():
     print("\n[6/6] Done. All models trained and saved.")
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
