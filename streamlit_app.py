@@ -14,7 +14,12 @@ def load_models():
     d = Path(__file__).parent / "outputs" / "models"
     return {k: joblib.load(d / v) for k, v in [("regime", "flow_regime_classifier.pkl"), ("permeability", "permeability_estimator.pkl"), ("skin", "skin_estimator.pkl")]}
 
-models = load_models()
+try:
+    models = load_models()
+    st.success('Models loaded successfully')
+except Exception as e:
+    st.error(f'Failed to load models: {e}')
+    st.stop()
 
 st.sidebar.header("Input Parameters")
 time_hr = st.sidebar.slider("Time Hr", 0, 1000, 500)
@@ -60,4 +65,5 @@ if st.sidebar.button("Run Prediction"):
         st.metric("Skin", result if isinstance(result, str) else f"{result:.4f}")
     except Exception as e:
         st.error(f"Error: {e}")
+
 
