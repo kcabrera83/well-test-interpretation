@@ -89,3 +89,14 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+import mlflow
+mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", ""' + repo + '""))
+
+def log_to_mlflow(params, metrics):
+    with mlflow.start_run():
+        if params:
+            mlflow.log_params(params)
+        if metrics:
+            mlflow.log_metrics(metrics)
