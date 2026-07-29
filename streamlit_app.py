@@ -1,5 +1,4 @@
 import streamlit as st
-import pickle
 import joblib
 import numpy as np
 import sys
@@ -61,3 +60,4 @@ if st.sidebar.button("Run Prediction"):
         st.metric("Skin", result if isinstance(result, str) else f"{result:.4f}")
     except Exception as e:
         st.error(f"Error: {e}")
+
