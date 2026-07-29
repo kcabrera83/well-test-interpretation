@@ -5,40 +5,29 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 st.set_page_config(page_title="Well Test Interpretation", layout="wide")
 st.title("Well Test Interpretation")
-st.markdown("Interpret pressure transient analysis data.")
+st.markdown("Identify flow regimes and estimate reservoir parameters.")
 
-try:
-    import joblib
-    import numpy as np
-    d = Path(__file__).parent / "outputs" / "models"
-    models = {}
-    for k, v in [("regime", "flow_regime_classifier.pkl"), ("permeability", "permeability_estimator.pkl"), ("skin", "skin_estimator.pkl")]:
-        models[k] = joblib.load(d / v)
-    st.success("Models loaded successfully")
-except Exception as e:
-    st.error(f"Model loading error: {type(e).__name__}: {e}")
-    st.stop()
+import joblib, numpy as np
+d = Path(__file__).parent / 'outputs' / 'models'
+models = {'regime': joblib.load(d / 'flow_regime_classifier.pkl'), 'perm': joblib.load(d / 'permeability_estimator.pkl'), 'skin': joblib.load(d / 'skin_estimator.pkl')}
 
 st.sidebar.header("Input Parameters")
-time_hr = st.sidebar.slider("Time (hr)", 0, 1000, 500)
-pressure_psi = st.sidebar.slider("Pressure (psi)", 1000, 10000, 5500)
-derivative_psi = st.sidebar.slider("Derivative (psi)", 0, 1000, 500)
-rate_bbl_day = st.sidebar.slider("Rate (bbl/d)", 100, 10000, 5050)
+time = st.sidebar.slider('Time', 0, 1000, 500)
+pressure = st.sidebar.slider('Pressure', 1000, 10000, 5500)
+derivative = st.sidebar.slider('Derivative', 0, 1000, 500)
+rate = st.sidebar.slider('Rate', 100, 10000, 5050)
 
-if st.sidebar.button("Run Prediction"):
+if st.sidebar.button("Run"):
     try:
-        features = np.array([[time_hr, pressure_psi, derivative_psi, rate_bbl_day]])
-        results = {}
-        for name, key in [("Regime", "regime"), ("Permeability (md)", "permeability"), ("Skin", "skin")]:
-            m = models[key]
-            X = m["scaler"].transform(features)
-            pred = m["model"].predict(X)
-            if "label_encoder" in m:
-                results[name] = m["label_encoder"].inverse_transform(pred)[0]
-            else:
-                results[name] = f"{pred[0]:.2f}"
+        x = np.array([[time, pressure, derivative, rate]])
         cols = st.columns(3)
-        for i, (k, v) in enumerate(results.items()):
-            cols[i].metric(k, v)
+        for i, (k, m) in enumerate(models.items()):
+            X = m['scaler'].transform(x)
+            p = m['model'].predict(X)
+            if 'label_encoder' in m:
+                val = m['label_encoder'].inverse_transform(p)[0]
+            else:
+                val = f'{p[0]:.2f}'
+            cols[i].metric(k.title(), val)
     except Exception as e:
-        st.error(f"Prediction error: {e}")
+        st.error(str(e))
