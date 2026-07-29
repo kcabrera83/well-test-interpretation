@@ -1,5 +1,6 @@
 import streamlit as st
 import pickle
+import joblib
 import numpy as np
 import sys
 from pathlib import Path
@@ -12,7 +13,7 @@ st.markdown("Interpret pressure transient analysis data to identify flow regimes
 @st.cache_resource
 def load_models():
     d = Path(__file__).parent / "outputs" / "models"
-    return {k: pickle.load(open(d / v, "rb")) for k, v in [("regime", "flow_regime_classifier.pkl"), ("permeability", "permeability_estimator.pkl"), ("skin", "skin_estimator.pkl")]}
+    return {k: joblib.load(d / v) for k, v in [("regime", "flow_regime_classifier.pkl"), ("permeability", "permeability_estimator.pkl"), ("skin", "skin_estimator.pkl")]}
 
 models = load_models()
 
